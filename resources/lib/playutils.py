@@ -178,7 +178,7 @@ class PlayUtils():
             log.info("Can't direct play, resolution limit is enabled")
             return False
 
-        location = self.item['LocationType']
+        location = self.item.get('LocationType')
         if location == "FileSystem":
             # Verify the path
             if not self.fileExists():

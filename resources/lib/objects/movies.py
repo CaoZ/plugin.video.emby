@@ -335,7 +335,7 @@ class Movies(Items):
         self.kodi_db.add_studios(movieid, studios, "movie")
         # Process tags: view, emby tags
         tags = [viewtag]
-        tags.extend(item['Tags'])
+        tags.extend(item.get('Tags', []))
         if userdata['Favorite']:
             tags.append("Favorite movies")
         self.kodi_db.add_tags(movieid, tags, "movie")

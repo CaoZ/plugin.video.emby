@@ -153,7 +153,14 @@ class UserClient(threading.Thread):
                    value=artwork.Artwork().get_user_artwork(self._user['Id'], 'Primary'))
 
         self._server = self.doutils.downloadUrl("{server}/emby/System/Configuration?format=json")
-        settings('markPlayed', value=str(self._server['MaxResumePct']))
+
+        try:
+            max_resume_pct = str(self.doutils.downloadUrl("{server}/emby/Library/VirtualFolders?format=json")[0]["LibraryOptions"]["MaxResumePct"])
+            log.info("cz_max_resume_pct=%s", max_resume_pct)
+        except:
+            max_resume_pct = "90"
+
+        settings('markPlayed', value=max_resume_pct)
 
     def _authenticate(self):
 

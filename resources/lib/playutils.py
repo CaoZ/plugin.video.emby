@@ -5,6 +5,7 @@
 import logging
 import sys
 import urllib
+import requests
 
 import xbmc
 import xbmcgui
@@ -85,6 +86,7 @@ class PlayUtils():
             window('emby_%s.playmethod' % playurl, value="DirectPlay")
             
 
+        # elif self.item.get('MediaSources') and self.item['MediaSources'][0]['Protocol'] in ("Http", "File"):
         elif self.item.get('MediaSources') and self.item['MediaSources'][0]['Protocol'] == "Http":
             # Only play as http, used for channels, or online hosting of content
             log.info("File protocol is http.")
@@ -124,11 +126,12 @@ class PlayUtils():
 
         if mediatype == "Audio":
             playurl = "%s/emby/Audio/%s/stream?" % (self.server, itemid)
-        else:
-            playurl = "%s/emby/Videos/%s/stream?static=true" % (self.server, itemid)
+            user_token = downloadutils.DownloadUtils().get_token()
+            playurl += "&api_key=" + str(user_token)
 
-        user_token = downloadutils.DownloadUtils().get_token()
-        playurl += "&api_key=" + str(user_token)
+        else:
+            playurl = self.get_final_path()
+
         return playurl
 
     def isDirectPlay(self):
@@ -292,11 +295,12 @@ class PlayUtils():
             playurl = self.directPlay()
         elif self.item['Type'] == "Audio":
             playurl = "%s/emby/Audio/%s/stream.mp3?" % (self.server, self.item['Id'])
-        else:
-            playurl = "%s/emby/Videos/%s/stream?static=true" % (self.server, self.item['Id'])
+            user_token = downloadutils.DownloadUtils().get_token()
+            playurl += "&api_key=" + str(user_token)
 
-        user_token = downloadutils.DownloadUtils().get_token()
-        playurl += "&api_key=" + str(user_token)
+        else:
+            playurl = self.get_final_path()
+
         return playurl
 
     def isNetworkSufficient(self):
@@ -705,3 +709,18 @@ class PlayUtils():
             log.debug(self.item)
             return False
 
+    def get_final_path(self):
+        if 'final_path' in self.item:
+            return self.item['final_path']
+
+        r = requests.head('http://i.rock-it.org:8096/video-path/' + self.item['Id'], allow_redirects=False)
+
+        if r.is_redirect:
+            log.info('# got_cz_real_path')
+            final_path = r.headers['Location']
+        else:
+            user_token = downloadutils.DownloadUtils().get_token()
+            final_path = "%s/emby/Videos/%s/stream?static=true" % (self.server, self.item['Id']) + "&api_key=" + str(user_token)
+
+        self.item['final_path'] = final_path
+        return final_path

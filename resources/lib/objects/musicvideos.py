@@ -248,7 +248,7 @@ class MusicVideos(Items):
         self.kodi_db.add_studios(mvideoid, studios, "musicvideo")
         # Process tags: view, emby tags
         tags = [viewtag]
-        tags.extend(item['Tags'])
+        tags.extend(item.get('Tags', []))
         if userdata['Favorite']:
             tags.append("Favorite musicvideos")
         self.kodi_db.add_tags(mvideoid, tags, "musicvideo")

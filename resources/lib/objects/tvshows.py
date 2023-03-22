@@ -443,7 +443,7 @@ class TVShows(Items):
         self.kodi_db.add_studios(showid, studios, "tvshow")
         # Process tags: view, emby tags
         tags = [viewtag]
-        tags.extend(item['Tags'])
+        tags.extend(item.get('Tags', []))
         if userdata['Favorite']:
             tags.append("Favorite tvshows")
         self.kodi_db.add_tags(showid, tags, "tvshow")

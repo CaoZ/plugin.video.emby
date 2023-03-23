@@ -225,7 +225,7 @@ class Read_EmbyServer():
         url = "{server}/emby/LiveTv/Recordings/?userid={UserId}&format=json"
         return self.doUtils.downloadUrl(url, parameters=params)
     
-    def getSection(self, parentid, itemtype=None, sortby="SortName", artist_id=None, basic=False, dialog=None):
+    def getSection(self, parentid, itemtype=None, sortby="SortName", artist_id=None, basic=False, dialog=None, last_sync=None, user_sync=None):
 
         items = {
             
@@ -246,6 +246,12 @@ class Read_EmbyServer():
             'Recursive': True,
             'Limit': 1
         }
+
+        if last_sync:
+            # incremental sync
+            param_key = 'MinDateLastSavedForUser' if user_sync else 'MinDateLastSaved'
+            params[param_key] = last_sync
+
         try:
             result = self.doUtils.downloadUrl(url, parameters=params)
             total = result['TotalRecordCount']
@@ -275,6 +281,12 @@ class Read_EmbyServer():
                     'SortBy': sortby,
                     'SortOrder': "Ascending",
                 }
+
+                if last_sync:
+                    # incremental sync
+                    param_key = 'MinDateLastSavedForUser' if user_sync else 'MinDateLastSaved'
+                    params[param_key] = last_sync
+
                 if basic:
                     params['Fields'] = "Etag"
                 else:
@@ -375,23 +387,26 @@ class Read_EmbyServer():
 
         return True if total else False
 
-    def getMovies(self, parentId, basic=False, dialog=None):
-        return self.getSection(parentId, "Movie", basic=basic, dialog=dialog)
+    def getMovies(self, parentId, basic=False, dialog=None, **kwargs):
+        return self.getSection(parentId, "Movie", basic=basic, dialog=dialog, **kwargs)
 
-    def getBoxset(self, dialog=None):
-        return self.getSection(None, "BoxSet", dialog=dialog)
+    def getBoxset(self, dialog=None, **kwargs):
+        return self.getSection(None, "BoxSet", dialog=dialog, **kwargs)
 
     def getMovies_byBoxset(self, boxsetid):
         return self.getSection(boxsetid, "Movie")
 
-    def getMusicVideos(self, parentId, basic=False, dialog=None):
-        return self.getSection(parentId, "MusicVideo", basic=basic, dialog=dialog)
+    def getMusicVideos(self, parentId, basic=False, dialog=None, **kwargs):
+        return self.getSection(parentId, "MusicVideo", basic=basic, dialog=dialog, **kwargs)
 
     def getHomeVideos(self, parentId):
         return self.getSection(parentId, "Video")
 
-    def getShows(self, parentId, basic=False, dialog=None):
-        return self.getSection(parentId, "Series", basic=basic, dialog=dialog)
+    def getShows(self, parentId, basic=False, dialog=None, **kwargs):
+        return self.getSection(parentId, "Series", basic=basic, dialog=dialog, **kwargs)
+
+    def getSeasonsIncreamental(self, parentId, basic=False, dialog=None, **kwargs):
+        return self.getSection(parentId, "Season", basic=basic, dialog=dialog, **kwargs)
 
     def getSeasons(self, showId):
 
@@ -419,8 +434,8 @@ class Read_EmbyServer():
 
         return items
 
-    def getEpisodes(self, parentId, basic=False, dialog=None):
-        return self.getSection(parentId, "Episode", basic=basic, dialog=dialog)
+    def getEpisodes(self, parentId, basic=False, dialog=None, **kwargs):
+        return self.getSection(parentId, "Episode", basic=basic, dialog=dialog, **kwargs)
 
     def getEpisodesbyShow(self, showId):
         return self.getSection(showId, "Episode")

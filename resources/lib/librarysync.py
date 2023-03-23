@@ -139,6 +139,11 @@ class LibrarySync(threading.Thread):
             log.info("Fast sync server retention insufficient, fall back to full sync")
             return False
 
+        # increment sync by passing a time
+        log.info("# cz_incremental_sync start.")
+        self.fullSync(manualrun=True, incremental=True, last_sync=lastSync)
+        log.info("# cz_incremental_sync finished.")
+
         params = {'LastUpdateDT': lastSync}
         if settings('enableMusic') != "true":
             params['filter'] = "music"
@@ -228,7 +233,7 @@ class LibrarySync(threading.Thread):
                 window('emby_kodiScan', value="true")
                 self.dbCommit(connection)
 
-    def fullSync(self, manualrun=False, repair=False):
+    def fullSync(self, manualrun=False, repair=False, incremental=False, last_sync=None):
         # Only run once when first setting up. Can be run manually.
         music_enabled = settings('enableMusic') == "true"
 
@@ -299,7 +304,7 @@ class LibrarySync(threading.Thread):
                         continue
 
                     startTime = datetime.now()
-                    completed = process[itemtype](cursor_emby, cursor_video, pDialog)
+                    completed = process[itemtype](cursor_emby, cursor_video, pDialog, last_sync)
                     if not completed:
                         xbmc.executebuiltin('InhibitIdleShutdown(false)')
                         utils.setScreensaver(value=screensaver)
@@ -380,7 +385,7 @@ class LibrarySync(threading.Thread):
             with database.DatabaseConn() as cursor_video:
                 views.Views(cursor_emby, cursor_video).offline_mode()
 
-    def movies(self, embycursor, kodicursor, pdialog):
+    def movies(self, embycursor, kodicursor, pdialog, last_sync=None):
 
         # Get movies from emby
         emby_db = embydb.Embydb_Functions(embycursor)
@@ -402,26 +407,38 @@ class LibrarySync(threading.Thread):
                         heading=lang(29999),
                         message="%s %s..." % (lang(33017), view_name))
 
-            all_movies = self.emby.getMovies(view['id'], dialog=pdialog)
-            movies.add_all("Movie", all_movies, view)
+            if last_sync:
+                for user_sync in (False, True):
+                    all_movies = self.emby.getMovies(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
+                    movies.add_all("Movie", all_movies, view)
+
+            else:
+                all_movies = self.emby.getMovies(view['id'], dialog=pdialog)
+                movies.add_all("Movie", all_movies, view)
 
         log.debug("Movies finished.")
         return True
 
-    def boxsets(self, embycursor, kodicursor, pdialog):
+    def boxsets(self, embycursor, kodicursor, pdialog, last_sync=None):
 
         movies = Movies(embycursor, kodicursor, pdialog)
 
         if pdialog:
             pdialog.update(heading=lang(29999), message=lang(33018))
 
-        boxsets = self.emby.getBoxset(dialog=pdialog)
-        movies.add_all("BoxSet", boxsets)
+        if last_sync:
+            for user_sync in (False, True):
+                boxsets = self.emby.getBoxset(dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
+                movies.add_all("BoxSet", boxsets)
+
+        else:
+            boxsets = self.emby.getBoxset(dialog=pdialog)
+            movies.add_all("BoxSet", boxsets)
 
         log.debug("Boxsets finished.")
         return True
 
-    def musicvideos(self, embycursor, kodicursor, pdialog):
+    def musicvideos(self, embycursor, kodicursor, pdialog, last_sync=None):
 
         # Get musicvideos from emby
         emby_db = embydb.Embydb_Functions(embycursor)
@@ -442,16 +459,22 @@ class LibrarySync(threading.Thread):
                         heading=lang(29999),
                         message="%s %s..." % (lang(33019), viewName))
 
-            # Initial or repair sync
-            all_mvideos = self.emby.getMusicVideos(viewId, dialog=pdialog)
-            mvideos.add_all("MusicVideo", all_mvideos, view)
+            if last_sync:
+                for user_sync in (False, True):
+                    all_mvideos = self.emby.getMusicVideos(viewId, dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
+                    mvideos.add_all("MusicVideo", all_mvideos, view)
+
+            else:
+                # Initial or repair sync
+                all_mvideos = self.emby.getMusicVideos(viewId, dialog=pdialog)
+                mvideos.add_all("MusicVideo", all_mvideos, view)
 
         else:
             log.debug("MusicVideos finished.")
 
         return True
 
-    def tvshows(self, embycursor, kodicursor, pdialog):
+    def tvshows(self, embycursor, kodicursor, pdialog, last_sync=None):
 
         # Get shows from emby
         emby_db = embydb.Embydb_Functions(embycursor)
@@ -469,10 +492,22 @@ class LibrarySync(threading.Thread):
                         heading=lang(29999),
                         message="%s %s..." % (lang(33020), view['name']))
 
-            all_tvshows = self.emby.getShows(view['id'], dialog=pdialog)
-            #log.info([item['Id'] for item in all_tvshows['Items']])
-            #for all_tvshows in self.emby.get_parent_child(view['id'], "Series"):
-            tvshows.add_all("Series", all_tvshows, view)
+            if last_sync:
+                for user_sync in (False, True):
+                    all_tvshows = self.emby.getShows(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
+                    tvshows.add_all("Series", all_tvshows, view)
+
+                    all_seasons = self.emby.getSeasonsIncreamental(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
+                    tvshows.add_all("Season", all_seasons, view)
+
+                    all_episodes = self.emby.getEpisodes(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
+                    tvshows.add_all("Episode", all_episodes, view)
+
+            else:
+                all_tvshows = self.emby.getShows(view['id'], dialog=pdialog)
+                # log.info([item['Id'] for item in all_tvshows['Items']])
+                # for all_tvshows in self.emby.get_parent_child(view['id'], "Series"):
+                tvshows.add_all("Series", all_tvshows, view)
 
         else:
             log.debug("TVShows finished.")

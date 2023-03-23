@@ -699,7 +699,7 @@ def createListItemFromEmbyItem(item,art=artwork.Artwork(),doUtils=downloadutils.
         try:
             picture = doUtils.downloadUrl("{server}/Items/%s/Images" %itemid)
         except Exception as error:
-            lof.info("Error getting images from server: " + str(error))
+            log.info("Error getting images from server: " + str(error))
             picture = None
 
         if picture is not None:

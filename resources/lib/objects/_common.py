@@ -5,6 +5,7 @@
 import logging
 import os
 import sqlite3
+from functools import partial
 
 import xbmc
 import xbmcvfs
@@ -96,7 +97,7 @@ class Items(object):
             percentage = int((float(self.count) / float(self.total))*100)
             self.pdialog.update(percentage, message=self.title)
 
-    def add_all(self, item_type, items, view=None):
+    def add_all(self, item_type, items, view=None, last_sync=None):
 
         if self.should_stop():
             return False
@@ -108,6 +109,10 @@ class Items(object):
             self.pdialog.update(heading="Processing %s / %s items" % (view['name'], total))
 
         process = self._get_func(item_type, "added")
+
+        if item_type in ('Series', 'Season', 'Episode'):
+            process = partial(process, last_sync=last_sync)
+
         if view:
             process(items, total, view)
         else:

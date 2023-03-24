@@ -408,9 +408,8 @@ class LibrarySync(threading.Thread):
                         message="%s %s..." % (lang(33017), view_name))
 
             if last_sync:
-                for user_sync in (False, True):
-                    all_movies = self.emby.getMovies(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
-                    movies.add_all("Movie", all_movies, view)
+                all_movies = self.emby.getMovies(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=True)
+                movies.add_all("Movie", all_movies, view)
 
             else:
                 all_movies = self.emby.getMovies(view['id'], dialog=pdialog)
@@ -427,9 +426,8 @@ class LibrarySync(threading.Thread):
             pdialog.update(heading=lang(29999), message=lang(33018))
 
         if last_sync:
-            for user_sync in (False, True):
-                boxsets = self.emby.getBoxset(dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
-                movies.add_all("BoxSet", boxsets)
+            boxsets = self.emby.getBoxset(dialog=pdialog, last_sync=last_sync, user_sync=True)
+            movies.add_all("BoxSet", boxsets)
 
         else:
             boxsets = self.emby.getBoxset(dialog=pdialog)
@@ -460,9 +458,8 @@ class LibrarySync(threading.Thread):
                         message="%s %s..." % (lang(33019), viewName))
 
             if last_sync:
-                for user_sync in (False, True):
-                    all_mvideos = self.emby.getMusicVideos(viewId, dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
-                    mvideos.add_all("MusicVideo", all_mvideos, view)
+                all_mvideos = self.emby.getMusicVideos(viewId, dialog=pdialog, last_sync=last_sync, user_sync=True)
+                mvideos.add_all("MusicVideo", all_mvideos, view)
 
             else:
                 # Initial or repair sync
@@ -493,15 +490,14 @@ class LibrarySync(threading.Thread):
                         message="%s %s..." % (lang(33020), view['name']))
 
             if last_sync:
-                for user_sync in (False, True):
-                    all_tvshows = self.emby.getShows(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
-                    tvshows.add_all("Series", all_tvshows, view)
+                all_tvshows = self.emby.getShows(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=True)
+                tvshows.add_all("Series", all_tvshows, view, last_sync)
 
-                    all_seasons = self.emby.getSeasonsIncreamental(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
-                    tvshows.add_all("Season", all_seasons, view)
+                all_seasons = self.emby.getSeasonsIncreamental(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=True)
+                tvshows.add_all("Season", all_seasons, view, last_sync)
 
-                    all_episodes = self.emby.getEpisodes(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=user_sync)
-                    tvshows.add_all("Episode", all_episodes, view)
+                all_episodes = self.emby.getEpisodes(view['id'], dialog=pdialog, last_sync=last_sync, user_sync=True)
+                tvshows.add_all("Episode", all_episodes, view, last_sync)
 
             else:
                 all_tvshows = self.emby.getShows(view['id'], dialog=pdialog)

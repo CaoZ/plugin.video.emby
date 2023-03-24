@@ -195,15 +195,16 @@ class TVShows(Items):
         return True
 
 
-    def add_shows(self, items, total=None, view=None):
+    def add_shows(self, items, total=None, view=None, last_sync=None):
 
         for item in self.added(items, total):
-            if self.add_update(item, view):
+            if self.add_update(item, view, last_sync):
                 # Add episodes
-                all_episodes = self.emby.getEpisodesbyShow(item['Id'])
-                self.add_episodes(all_episodes['Items'])
+                if not last_sync:
+                    all_episodes = self.emby.getEpisodesbyShow(item['Id'])
+                    self.add_episodes(all_episodes['Items'])
 
-    def add_seasons(self, items, total=None, view=None):
+    def add_seasons(self, items, total=None, view=None, last_sync=None):
 
         update = True if not self.total else False
 
@@ -212,10 +213,11 @@ class TVShows(Items):
 
             if self.add_updateSeason(item):
                 # Add episodes
-                all_episodes = self.emby.getEpisodesbySeason(item['Id'])
-                self.add_episodes(all_episodes['Items'])
+                if not last_sync:
+                    all_episodes = self.emby.getEpisodesbySeason(item['Id'])
+                    self.add_episodes(all_episodes['Items'])
 
-    def add_episodes(self, items, total=None, view=None):
+    def add_episodes(self, items, total=None, view=None, last_sync=None):
 
         update = True if not self.total else False
 
@@ -226,7 +228,7 @@ class TVShows(Items):
                 self.content_pop(self.title)
 
     @catch_except()
-    def add_update(self, item, view=None):
+    def add_update(self, item, view=None, last_sync=None):
         # Process single tvshow
         kodicursor = self.kodicursor
         emby = self.emby
@@ -447,22 +449,24 @@ class TVShows(Items):
         if userdata['Favorite']:
             tags.append("Favorite tvshows")
         self.kodi_db.add_tags(showid, tags, "tvshow")
-        # Process seasons
-        all_seasons = emby.getSeasons(itemid)
-        for season in all_seasons['Items']:
-            log.info("found season: %s", season)
-            self.add_updateSeason(season, showid=showid)
-        else:
-            # Finally, refresh the all season entry
-            seasonid = self.kodi_db.get_season(showid, -1)
-            # Process artwork
-            artwork.add_artwork(artwork.get_all_artwork(item), seasonid, "season", kodicursor)
 
-        if force_episodes:
-            # We needed to recreate the show entry. Re-add episodes now.
-            log.info("Repairing episodes for showid: %s %s", showid, title)
-            all_episodes = emby.getEpisodesbyShow(itemid)
-            self.add_episodes(all_episodes['Items'], None)
+        if not last_sync:
+            # Process seasons
+            all_seasons = emby.getSeasons(itemid)
+            for season in all_seasons['Items']:
+                log.info("found season: %s", season)
+                self.add_updateSeason(season, showid=showid)
+            else:
+                # Finally, refresh the all season entry
+                seasonid = self.kodi_db.get_season(showid, -1)
+                # Process artwork
+                artwork.add_artwork(artwork.get_all_artwork(item), seasonid, "season", kodicursor)
+
+            if force_episodes:
+                # We needed to recreate the show entry. Re-add episodes now.
+                log.info("Repairing episodes for showid: %s %s", showid, title)
+                all_episodes = emby.getEpisodesbyShow(itemid)
+                self.add_episodes(all_episodes['Items'], None)
 
         return True
 

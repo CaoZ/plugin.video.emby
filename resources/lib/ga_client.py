@@ -23,10 +23,10 @@ def log_error(errors=(Exception, )):
             try:
                 return func(*args, **kwargs)
             except errors as error:
-                if not (hasattr(error, 'quiet') and error.quiet):
-                    ga = GoogleAnalytics()
-                    errStrings = ga.formatException()
-                    ga.sendEventData("Exception", errStrings[0], errStrings[1], True)
+                # if not (hasattr(error, 'quiet') and error.quiet):
+                #     ga = GoogleAnalytics()
+                #     errStrings = ga.formatException()
+                #     ga.sendEventData("Exception", errStrings[0], errStrings[1], True)
                 log.exception(error)
                 log.error("log_error: %s \n args: %s \n kwargs: %s",
                           func.__name__, args, kwargs)
@@ -40,6 +40,7 @@ class GoogleAnalytics():
     testing = False
     
     def __init__(self):
+        return
     
         client_info = clientinfo.ClientInfo()
         self.version = client_info.get_version()
@@ -86,6 +87,7 @@ class GoogleAnalytics():
             return "Other"
         
     def formatException(self):
+        return None, None
 
         stack = traceback.extract_stack()
         exc_type, exc_obj, exc_tb = sys.exc_info()
@@ -145,7 +147,7 @@ class GoogleAnalytics():
         return errorType, errorFile
 
     def getBaseData(self):
-    
+
         # all the data we can send to Google Analytics
         data = {}
         data['v'] = '1'
@@ -172,6 +174,7 @@ class GoogleAnalytics():
         return data
     
     def sendScreenView(self, name):
+        return
     
         data = self.getBaseData()
         data['t'] = 'screenview' # action type
@@ -180,6 +183,7 @@ class GoogleAnalytics():
         self.sendData(data)
     
     def sendEventData(self, eventCategory, eventAction, eventLabel=None, throttle=False):
+        return
         
         # if throttling is enabled then only log the same event every 5 min
         if(throttle):
@@ -203,6 +207,7 @@ class GoogleAnalytics():
         self.sendData(data)
             
     def sendData(self, data):
+        return
 
         if(settings('metricLogging') == "false"):
             return

@@ -146,6 +146,11 @@ class LibrarySync(threading.Thread):
 
         try:
             result = self.doUtils(url, parameters=params)
+
+            if result['ItemsRemoved']:
+                # Kodi.SyncQueue 插件返回的不全, 存在只返回父级的情况, 当前版本 Emby for Kodi 无法处理 (Emby For Kodi Next Gen 就可以了)
+                return False
+
             processlist = {
 
                 'added': result['ItemsAdded'],
@@ -164,8 +169,6 @@ class LibrarySync(threading.Thread):
             log.info("Fast sync changes: %s" % result)
             for action in processlist:
                 self.triage_items(action, processlist[action])
-
-
 
         # increment sync by passing a time
         log.info("# cz_incremental_sync start.")

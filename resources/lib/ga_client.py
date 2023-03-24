@@ -87,7 +87,6 @@ class GoogleAnalytics():
             return "Other"
         
     def formatException(self):
-        return None, None
 
         stack = traceback.extract_stack()
         exc_type, exc_obj, exc_tb = sys.exc_info()

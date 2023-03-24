@@ -139,11 +139,6 @@ class LibrarySync(threading.Thread):
             log.info("Fast sync server retention insufficient, fall back to full sync")
             return False
 
-        # increment sync by passing a time
-        log.info("# cz_incremental_sync start.")
-        self.fullSync(manualrun=True, incremental=True, last_sync=lastSync)
-        log.info("# cz_incremental_sync finished.")
-
         params = {'LastUpdateDT': lastSync}
         if settings('enableMusic') != "true":
             params['filter'] = "music"
@@ -169,7 +164,15 @@ class LibrarySync(threading.Thread):
             log.info("Fast sync changes: %s" % result)
             for action in processlist:
                 self.triage_items(action, processlist[action])
-            return True
+
+
+
+        # increment sync by passing a time
+        log.info("# cz_incremental_sync start.")
+        self.fullSync(manualrun=True, incremental=True, last_sync=lastSync)
+        log.info("# cz_incremental_sync finished.")
+
+        return True
 
     def saveLastSync(self):
 
@@ -304,7 +307,7 @@ class LibrarySync(threading.Thread):
                         continue
 
                     startTime = datetime.now()
-                    completed = process[itemtype](cursor_emby, cursor_video, pDialog, last_sync)
+                    completed = process[itemtype](cursor_emby, cursor_video, pDialog, last_sync=last_sync)
                     if not completed:
                         xbmc.executebuiltin('InhibitIdleShutdown(false)')
                         utils.setScreensaver(value=screensaver)
@@ -845,16 +848,16 @@ class ManualSync(LibrarySync):
         else:
             return self.fullSync(manualrun=True)
 
-    def movies(self, embycursor, kodicursor, pdialog):
+    def movies(self, embycursor, kodicursor, pdialog, **kwargs):
         return Movies(embycursor, kodicursor, pdialog).compare_all()
 
-    def boxsets(self, embycursor, kodicursor, pdialog):
+    def boxsets(self, embycursor, kodicursor, pdialog, **kwargs):
         return Movies(embycursor, kodicursor, pdialog).force_refresh_boxsets()
 
-    def musicvideos(self, embycursor, kodicursor, pdialog):
+    def musicvideos(self, embycursor, kodicursor, pdialog, **kwargs):
         return MusicVideos(embycursor, kodicursor, pdialog).compare_all()
 
-    def tvshows(self, embycursor, kodicursor, pdialog):
+    def tvshows(self, embycursor, kodicursor, pdialog, **kwargs):
         return TVShows(embycursor, kodicursor, pdialog).compare_all()
 
     def music(self, embycursor, kodicursor, pdialog):

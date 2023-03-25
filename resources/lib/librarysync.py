@@ -147,12 +147,20 @@ class LibrarySync(threading.Thread):
         try:
             result = self.doUtils(url, parameters=params)
 
-            if result['ItemsRemoved']:
-                # Kodi.SyncQueue 插件返回的不全, 存在只返回父级的情况, 当前版本 Emby for Kodi 无法处理 (Emby For Kodi Next Gen 就可以了)
-                return False
+            to_remove = result['ItemsRemoved']
+            log.info('# cz_to_remove: %s' % to_remove)
+
+            if to_remove:
+                with database.DatabaseConn('emby', do_verify=False) as cursor:
+                    emby_db = embydb.Embydb_Functions(cursor)
+                    exist_count = emby_db.get_count_by_emby_ids(to_remove)
+
+                    if exist_count != len(to_remove):
+                        # Kodi.SyncQueue 插件返回的不全, 存在只返回父级虚拟 id 的情况, 当前版本 Emby for Kodi 无法处理 (Emby For Kodi Next Gen 就可以了)
+                        log.info('# fast sync unavailable: exist_count != to_remove_count')
+                        return False
 
             processlist = {
-
                 'added': result['ItemsAdded'],
                 'update': result['ItemsUpdated'],
                 'userdata': result['UserDataChanged'],

@@ -79,7 +79,7 @@ def kodi_commit():
 class DatabaseConn(object):
     # To be called as context manager - i.e. with DatabaseConn() as conn: #dostuff
 
-    def __init__(self, database_file="video", commit_on_close=True, timeout=120):
+    def __init__(self, database_file="video", commit_on_close=True, timeout=120, do_verify=True):
         """
         database_file can be custom: emby, texture, music, video, :memory: or path to the file
         commit_mode set to None to autocommit (isolation_level). See python documentation.
@@ -87,6 +87,7 @@ class DatabaseConn(object):
         self.db_file = database_file
         self.commit_on_close = commit_on_close
         self.timeout = timeout
+        self.do_verify = do_verify
 
     def __enter__(self):
         # Open the connection
@@ -101,7 +102,7 @@ class DatabaseConn(object):
         log.info("opened: %s - %s", self.path, id(self.conn))
         self.cursor = self.conn.cursor()
 
-        if self.db_file == "emby":
+        if self.db_file == "emby" and self.do_verify:
             verify_emby_database(self.cursor)
             self.conn.commit()
 

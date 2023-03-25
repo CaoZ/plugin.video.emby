@@ -216,6 +216,15 @@ class Embydb_Functions():
         ))
         self.embycursor.execute(query, (viewid,))
 
+
+    def get_count_by_emby_ids(self, emby_ids):
+        emby_ids = ', '.join("'%s'" % emby_id for emby_id in emby_ids)
+        query = 'select count(*) from emby where emby_id in (%s)' % emby_ids
+        self.embycursor.execute(query)
+        count = self.embycursor.fetchone()[0]
+        return count
+
+
     def getItem_byId(self, embyid):
 
         query = ' '.join((
